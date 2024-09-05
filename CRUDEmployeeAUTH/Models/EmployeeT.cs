@@ -1,16 +1,15 @@
-﻿using CrudEmployeeAUTH.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CRUDEmployeeAUTH.Models
 {
     public class EmployeeT
     {
-       // [Key]
+        [Key]
         public int Id { get; set; }
 
-        //[ForeignKey("EmployeeFKey")]
-       // public int EmployeeId { get; set; }
+        [ForeignKey("EmployeeFKey")]
+        public int EmployeeId { get; set; }
         public string Name { get; set; }
         public string Position { get; set; }
         public string Salary { get; set; }

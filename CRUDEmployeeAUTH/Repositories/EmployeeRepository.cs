@@ -1,7 +1,6 @@
 ﻿using CrudEmployeeAUTH.Models;
 using CRUDEmployeeAUTH.Data;
 using CRUDEmployeeAUTH.IRepositories;
-using CRUDEmployeeAUTH.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CrudEmployeeAUTH.Repositories
@@ -15,13 +14,10 @@ namespace CrudEmployeeAUTH.Repositories
             _context = context;
         }
 
-
-
         public async Task<IEnumerable<Employee>> GetAllAsync()
         {
             return await _context.Employees.ToListAsync();
         }
-
 
         public async Task<Employee> GetByIdAsync(int id)
         {
@@ -34,13 +30,11 @@ namespace CrudEmployeeAUTH.Repositories
 
         }
 
-
         public async Task AddAsync(Employee employee)
         {
             await _context.Employees.AddAsync(employee);
             await _context.SaveChangesAsync();
         }
-
 
         public async Task UpdateAsync(Employee employee)
         {

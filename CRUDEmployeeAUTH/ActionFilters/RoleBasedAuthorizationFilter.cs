@@ -1,31 +1,39 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
-namespace CRUDEmployeeAUTH.ActionFilters
+public class RoleBasedAuthorizationFilter : IAsyncActionFilter
 {
-    public class RoleBasedAuthorizationFilter : IAuthorizationFilter
-    {
-        private readonly string _requiredRole;
+    private readonly string _role;
+    private readonly string _company;
 
-        public RoleBasedAuthorizationFilter(string requiredRole)
+    public RoleBasedAuthorizationFilter(string role, string company = null)
+    {
+        _role = role;
+        _company = company;
+    }
+
+    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        var user = context.HttpContext.User;
+        var userRole = user.FindFirst("Role")?.Value;
+        var userCompany = user.FindFirst("Company")?.Value;
+
+        if (userRole == null || (userRole != _role && userRole != "SystemAdmin"))
         {
-            _requiredRole = requiredRole;
+            context.Result = new ForbidResult();
+            return;
         }
-        public void OnAuthorization(AuthorizationFilterContext context)
+
+        if (_company != null && userRole == "CompanyAdmin" && userCompany != _company)
         {
-            var user = context.HttpContext.User;
-            if (user.Identity.IsAuthenticated)
-            {
-                var companyClaim = user.FindFirst("Company")?.Value;
-                if (companyClaim != _requiredRole)
-                {
-                    context.Result = new ForbidResult();
-                }
-            }
-            else
-            {
-                context.Result = new UnauthorizedResult();
-            }
+            context.Result = new ForbidResult();
+            return;
         }
+
+        await next();
     }
 }

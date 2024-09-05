@@ -1,7 +1,10 @@
 ﻿using CrudEmployeeAUTH.Models;
 using CRUDEmployeeAUTH.ActionFilters;
 using CRUDEmployeeAUTH.IRepositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CrudEmployeeAUTH.Controllers
 {
@@ -21,9 +24,6 @@ namespace CrudEmployeeAUTH.Controllers
             _repository = repository;
         }
 
-
-
-        [TypeFilter(typeof(RoleBasedAuthorizationFilter), Arguments = new object[] { "Merik" })]
         [Route("GetAllEmployees")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> GetAll()
@@ -32,55 +32,45 @@ namespace CrudEmployeeAUTH.Controllers
             return Ok(employees);
         }
 
+        [Authorize(Policy = "CompanyAdminOrSystemAdmin")]
         [HttpGet("GetById")]
-        public async Task<ActionResult<Employee>> GetById( int id)
+        public async Task<ActionResult<Employee>> GetById(int id)
         {
             var employee = await _repository.GetByIdAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
             return Ok(employee);
         }
-
-
 
         [HttpGet("GetByIdAndName")]
         public async Task<ActionResult<Employee>> GetByIdAndName([FromQuery] int id, [FromQuery] string name)
         {
             var employee = await _repository.GetByIdAndNameAsync(id, name);
-            if (employee == null)
-            {
-                return NotFound();
-            }
             return Ok(employee);
         }
 
-
         [HttpPost]
-            public async Task<ActionResult> Add([FromBody] Employee employee)
+        public async Task<ActionResult> Add([FromBody] Employee employee)
+        {
+            await _repository.AddAsync(employee);
+            return Ok(employee);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Update(int id, [FromBody] Employee employee)
+        {
+            if (id != employee.Id)
             {
-                await _repository.AddAsync(employee);
-                return CreatedAtAction(nameof(GetById), new { id = employee.Id }, employee);
+                return BadRequest("Employee ID mismatch.");
             }
 
-            [HttpPut("{id}")]
-            public async Task<ActionResult> Update(int id, Employee employee)
-            {
-                if (id != employee.Id)
-                {
-                    return BadRequest();
-                }
+            await _repository.UpdateAsync(employee);
+            return NoContent();
+        }
 
-                await _repository.UpdateAsync(employee);
-                return NoContent();
-            }
-
-            [HttpDelete("{id}")]
-            public async Task<ActionResult> Delete(int id)
-            {
-                await _repository.DeleteAsync(id);
-                return NoContent();
-            }
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            await _repository.DeleteAsync(id);
+            return NoContent();
         }
     }
+}

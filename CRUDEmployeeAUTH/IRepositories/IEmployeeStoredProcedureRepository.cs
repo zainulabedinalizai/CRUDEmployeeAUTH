@@ -1,7 +1,4 @@
 ﻿using CRUDEmployeeAUTH.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace CRUDEmployeeAUTH.IRepositories
 {
     public interface IEmployeeStoredProcedureRepository
