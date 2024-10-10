@@ -14,16 +14,16 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<EmployeeContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<EmployeeContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repos
+// Repository registration
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEmployeTRepository, EmployeeTRepository>();
 builder.Services.AddScoped<IEmployeeStoredProcedureRepository, EmployeeStoredProcedureRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
 
 // Action Filters
 builder.Services.AddMemoryCache();
@@ -38,11 +38,9 @@ builder.Services.AddScoped<ExceptionHandlingFilter>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<ResultFilter>();
 builder.Services.AddScoped<CustomAuthorizationFilter>();
-builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
-builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<ReviewLeaveFilter>();
 
-// JWT authentication
+// JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -69,7 +67,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Employee", policy => policy.RequireRole("Employee"));
 });
 
-
+// Swagger Configuration
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
@@ -100,26 +98,33 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<UserIdHeaderParameter>();
 });
 
+// CORS Configuration (Optional: Enable this if needed for frontend access)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // Your frontend origin
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
+// Add Controllers and JSON configuration
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
         options.JsonSerializerOptions.MaxDepth = 64;
-    });
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
     });
 
-builder.Services.AddControllers();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
+
+// Enable CORS
+app.UseCors("AllowReactApp");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -132,7 +137,6 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<UserIdMiddleware>();
 
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
